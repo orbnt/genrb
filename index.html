@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Generator Script MikroTik Advanced</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="assets/icon.svg">
+
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">MikroTik Script Generator</a>
+        </div>
+    </nav>
+    <div class="container py-3">
+        <div class="bg-white rounded-4 shadow p-4 mb-4">
+            <h4 class="mb-4 fw-bold text-primary">Konfigurasi Dasar MikroTik</h4>
+            <form id="configForm">
+                <div class="mb-3">
+                    <label class="form-label">Tipe RouterBoard</label>
+                    <select class="form-select" id="routerType" name="routerType" required>
+                        <option value="ethernet" selected>Ethernet Only (Tanpa WiFi)</option>
+                        <option value="wifi">Ada WiFi (wlan)</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Mode Konfigurasi</label>
+                    <select class="form-select" id="modeConfig" name="modeConfig" required>
+                        <option value="recommended" selected>Recommended (Default)</option>
+                        <option value="advanced">Advanced (Semua Opsi)</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Telegram Bot Token</label>
+                    <input class="form-control" id="tgBotToken" placeholder="123456:ABCDEF-...">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Telegram Chat ID</label>
+                    <input class="form-control" id="tgChatID" placeholder="12345678">
+                </div>
+
+                <div id="inputSection"></div>
+                <button type="submit" class="btn btn-primary w-100 mt-4 fw-bold">Generate Script</button>
+            </form>
+        </div>
+        <div class="bg-white rounded-4 shadow p-4 mb-4">
+            <h5 class="fw-bold">Script Output</h5>
+            <pre id="outputScript" class="mb-2"></pre>
+            <button class="btn btn-outline-secondary" id="copyBtn">Copy Script</button>
+            <button class="btn btn-outline-success" id="downloadBtn">Download .rsc</button>
+        </div>
+    </div>
+    <footer class="text-center text-muted py-2 small">v1.0 | Build by Kristafa x ChatGPT | Powered by Bootstrap</footer>
+    <script src="assets/js/main.js"></script>
+</body>
+
+</html>
