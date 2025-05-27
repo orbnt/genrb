@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Kalkulator Burst Limit MikroTik</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {background: #f4f6fa;}
+    .container {max-width:420px;}
+    .burst-label {font-weight:500;}
+    #notasiField {font-family:monospace;font-size:1em;background:#eef3fa;border:none;padding:7px 9px;border-radius:7px;width:100%;}
+  </style>
+</head>
+<body>
+<div class="container mt-4 p-3 shadow bg-white rounded">
+  <h4 class="mb-3 text-primary text-center">Kalkulator Burst Limit MikroTik</h4>
+  <form id="formBurst">
+    <div class="mb-3">
+      <label class="form-label burst-label">Pilih Angka Download (Mbps)</label>
+      <select class="form-select" id="drilldown">
+        <!-- Pilihan angka 1-20, nanti di JS bisa disable dari 2 jika double -->
+        <!-- default: angka 1-20 -->
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+        <option value="6">6</option>
+        <option value="7">7</option>
+        <option value="8">8</option>
+        <option value="9">9</option>
+        <option value="10">10</option>
+        <option value="11">11</option>
+        <option value="12">12</option>
+        <option value="13">13</option>
+        <option value="14">14</option>
+        <option value="15">15</option>
+        <option value="16">16</option>
+        <option value="17">17</option>
+        <option value="18">18</option>
+        <option value="19">19</option>
+        <option value="20">20</option>
+      </select>
+      <div class="form-text">Angka ini adalah <b>download</b> dalam Mbps (misal pilih 4 artinya download 4 Mbps)</div>
+    </div>
+    <div class="mb-3 form-check">
+      <input type="checkbox" class="form-check-input" id="doubleBurst">
+      <label class="form-check-label burst-label" for="doubleBurst">Double Burst</label>
+      <div class="form-text">Jika dicentang, burst download = download × 2, dan pilihan angka mulai dari 2</div>
+    </div>
+    <div class="mb-3">
+      <label class="form-label burst-label">Rasio Upload/Download</label>
+      <select class="form-select" id="ratio">
+        <option value="1">1:1</option>
+        <option value="2">1:2</option>
+        <option value="3">1:3</option>
+        <option value="4">1:4</option>
+        <option value="5">1:5</option>
+      </select>
+    </div>
+    <button type="submit" class="btn btn-primary w-100 mb-2">Generate Notasi</button>
+    <button type="button" class="btn btn-success w-100" id="copyBtn" style="display:none;">Copy Notasi</button>
+  </form>
+  <div class="mt-4">
+    <label class="burst-label">Notasi Burst Limit:</label>
+    <input type="text" id="notasiField" readonly class="mb-2">
+  </div>
+</div>
+<script>
+function formatKM(val) {
+  if (val % 1024 === 0) {
+    return (val / 1024) + "M";
+  } else {
+    return Math.round(val) + "k";
+  }
+}
+function formatNotasi(up, down) { return formatKM(up)+"/"+formatKM(down); }
+
+const drilldownSelect = document.getElementById('drilldown');
+const doubleBurstCheckbox = document.getElementById('doubleBurst');
+
+// Fungsi untuk update pilihan drilldown jika doubleBurst di cek/ubah
+function updateDrilldownOptions() {
+  const isDouble = doubleBurstCheckbox.checked;
+  drilldownSelect.innerHTML = "";
+  let start = isDouble ? 2 : 1;
+  for(let i=start; i<=20; i++) {
+    let opt = document.createElement("option");
+    opt.value = i;
+    opt.innerText = i;
+    drilldownSelect.appendChild(opt);
+  }
+}
+doubleBurstCheckbox.addEventListener('change', updateDrilldownOptions);
+
+// Hitung notasi sesuai logic user
+document.getElementById('formBurst').addEventListener('submit', function(e){
+  e.preventDefault();
+
+  let download = parseInt(document.getElementById('drilldown').value); // in Mbps
+  let doubleBurst = document.getElementById('doubleBurst').checked;
+  let ratio = parseInt(document.getElementById('ratio').value);
+
+  // Limit-at
+  let download_limitat_mbps = download;
+  let upload_limitat_mbps = download / ratio;
+
+  // Burst-limit
+  let burst_download = doubleBurst ? download * 2 : download + 1;
+  let burst_upload = burst_download / ratio;
+
+  // Semua satuan jadi kbps
+  let dl_limitat = Math.round(download_limitat_mbps * 1024);
+  let ul_limitat = Math.round(upload_limitat_mbps * 1024);
+  let dl_burst = Math.round(burst_download * 1024);
+  let ul_burst = Math.round(burst_upload * 1024);
+
+  // Burst-threshold = 75% dari limit-at
+  let dl_burstthresh = Math.round(dl_limitat * 0.75);
+  let ul_burstthresh = Math.round(ul_limitat * 0.75);
+
+  // burst-time & priority
+  let burstTime = 16;
+  let priority = 8;
+
+  // total-limit = 50% dari limit-at
+  let dl_totallimit = Math.round(dl_limitat * 0.5);
+  let ul_totallimit = Math.round(ul_limitat * 0.5);
+
+  // Format notasi satu baris (upload/download di parameter yg memang butuh up/down saja)
+  // limit-at   burst-limit   burst-threshold   burst-time   priority   total-limit
+  let notasi = [
+    formatNotasi(ul_limitat, dl_limitat),
+    formatNotasi(ul_burst, dl_burst),
+    formatNotasi(ul_burstthresh, dl_burstthresh),
+    burstTime + "/" + burstTime,
+    priority,
+    formatNotasi(ul_totallimit, dl_totallimit)
+  ].join(" ");
+
+  document.getElementById('notasiField').value = notasi;
+  document.getElementById('copyBtn').style.display = 'block';
+});
+
+document.getElementById('copyBtn').addEventListener('click', function(){
+  let text = document.getElementById('notasiField').value;
+  navigator.clipboard.writeText(text);
+  this.innerText = "✅ Copied!";
+  setTimeout(()=>{this.innerText="Copy Notasi";},1300);
+});
+</script>
+</body>
+</html>
